@@ -279,5 +279,50 @@
   ['sale','basis','debt'].forEach(function(id){ attachMoney($(id)); });
 })();
 </script>
+
+<!-- ===== RETT results-display customizations (appended) ===== -->
+<style id="rett-custom-style">
+  #result .stat.hero .k.rett-big{font-size:1.05rem;letter-spacing:.04em;}
+  #result .verdict .rett-save{margin-top:.5rem;font-size:2.6rem;font-weight:800;line-height:1.05;color:#1f7a4d;}
+  #result .verdict .rett-save-k{font-size:.85rem;letter-spacing:.06em;text-transform:uppercase;opacity:.7;margin-top:.75rem;font-weight:700;}
+</style>
+<script>
+(function(){
+  var CG_RATE=0.238, FEE=60000, INVEST_PCT=0.015;
+  var GAIN_BAR=1000000, AVAIL_GREAT=3000000, AVAIL_STRONG=1700000;
+  function num(id){ return Number((document.getElementById(id).value||"").replace(/[^0-9]/g,""))||0; }
+  function money(n){ return (n<0?"-$":"$")+Math.abs(Math.round(n)).toLocaleString("en-US"); }
+  function rewriteStats(){
+    var stats=document.querySelector("#result .stats");
+    if(!stats) return;
+    var firstK=stats.querySelector(".k");
+    if(!firstK || firstK.textContent.indexOf("Estimated Tax Due")===0) return;
+    var gain=num("sale")-num("basis");
+    if(gain<=0) return;
+    var tax=CG_RATE*gain;
+    stats.innerHTML="<div class=\"stat hero\"><div class=\"k rett-big\">Estimated Tax Due</div>"+
+      "<div class=\"v\">"+money(tax)+"</div>"+
+      "<div class=\"vsub\">~"+Math.round(CG_RATE*100)+"% federal (LT cap gains + NIIT) \u2014 your state adds more</div></div>";
+  }
+  function rewriteVerdict(){
+    var v=document.querySelector("#result .verdict");
+    if(!v || v.getAttribute("data-rett")==="1") return;
+    var sale=num("sale"), gain=sale-num("basis"), avail=sale-num("debt");
+    if(gain<=0) return;
+    var isGreat=gain>=GAIN_BAR && avail>=AVAIL_GREAT;
+    var isStrong=gain>=GAIN_BAR && avail>=AVAIL_STRONG && avail<AVAIL_GREAT;
+    if(!(isGreat||isStrong)) return;
+    var net=(CG_RATE*gain)-FEE-(INVEST_PCT*sale);
+    var h=v.querySelector("h2"), p=v.querySelector("p");
+    if(h) h.textContent="You\u2019re a great fit \u2014 you\u2019re exactly who RETT is built for.";
+    if(p) p.outerHTML="<div class=\"rett-save-k\">Estimated Net Savings</div><div class=\"rett-save\">"+money(net)+"</div>";
+    v.setAttribute("data-rett","1");
+  }
+  function rewrite(){ rewriteStats(); rewriteVerdict(); }
+  var result=document.getElementById("result");
+  new MutationObserver(rewrite).observe(result,{childList:true,subtree:true});
+  rewrite();
+})();
+</script>
 </body>
 </html>
